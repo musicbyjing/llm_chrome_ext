@@ -1,0 +1,19 @@
+{
+  "name": "chrome_extension",
+  "module": "src/content.js",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "scripts": {
+    "dev": "bun build --watch src/content.js src/popup/popup.js --outdir dist",
+    "copy-static": "cp -r src/images dist/images/ && cp src/popup/*.html dist/popup/ && cp manifest.json dist/"
+  },
+  "dependencies": {
+    "vanjs-core": "^1.5.2",
+    "vanjs-ui": "^0.10.0"
+  }
+}
