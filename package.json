@@ -13,6 +13,9 @@
     "copy-static": "cp -r src/images dist/images/ && cp src/popup/*.html dist/popup/ && cp manifest.json dist/"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^0.0.61",
+    "ai": "^3.4.0",
+    "openai": "^4.63.0",
     "vanjs-core": "^1.5.2",
     "vanjs-ui": "^0.10.0"
   }
