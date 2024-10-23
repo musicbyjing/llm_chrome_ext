@@ -1,43 +1,59 @@
 import { OpenAIStream, StreamingTextResponse, streamText } from "ai";
-import { openai } from '@ai-sdk/openai';
+import { createOpenAI, openai } from '@ai-sdk/openai';
 import { OpenAI } from "openai";
 
-let openAiClient;
+let openAiProvider;
 
-// Retrieve the OpenAI API key.
-chrome.storage.sync.get(['openai'], (result) => {
-  const openAIApiKey = result.openai;
-  openAiClient = new OpenAI({
+function initializeOpenAI(openAIApiKey) {
+  // Vercel.
+  openAiProvider = createOpenAI({
     apiKey: openAIApiKey,
     dangerouslyAllowBrowser: true // Needed for the Chrome extension to work.
   });
+  // Signal that the provider is ready.
+  document.dispatchEvent(new CustomEvent('openAiProviderReady'));
+  // Vanilla OpenAI API.
+  // openAiProvider = new OpenAI({
+  //   apiKey: openAIApiKey,
+  //   dangerouslyAllowBrowser: true // Needed for the Chrome extension to work.
+  // });
+}
+
+// Retrieve the OpenAI API key, if available.
+chrome.storage.sync.get(['openai'], (result) => {
+  const openAIApiKey = result.openai;
+  if (openAIApiKey) {
+    // console.log("%%% get openAIApiKey: " + openAIApiKey);
+    initializeOpenAI(openAIApiKey);
+  } else {
+    console.log('API key not found, waiting for storage update...');
+  }
 });
 
 // Update the OpenAI key if it changes.
 chrome.storage.onChanged.addListener((changes, namespace) => {
   if (namespace === "sync" && changes.openai) {
     const openAIApiKey = changes.openai.newValue;
-    openAiClient = new OpenAI({
-      apiKey: openAIApiKey,
-      dangerouslyAllowBrowser: true,
-    });
+    // console.log("%%% onChanged openAIApiKey: " + openAIApiKey);
+    initializeOpenAI(openAIApiKey);
   }
 });
 
 ///////////////////
-// - UPDATE THE ABOVE TO USE VERCEL
-// - USE CUSTOM VERCEL MODEL WITH API KEY INSIDE GET_NEW_TITLE
 // - MAY HAVE SOME ISSUES WITH DANGEROUSLYALLOWBROWSER OPTION
-// - NO NEED FOR READ_FROM_STREAM FUNCTION
 ///////////////////
 
 /**
  * Calls an LLM to rewrite the passed-in text.
  * 
  * @param {string} text - The post title.
- * @returns 
+ * @returns {ReadableStream}.
  */
 export async function getNewTitle(text) {
+  if (!openAiProvider) {
+    console.error('openAiProvider is not yet initialized.');
+    return;
+  }
   try {
     const promptTemplate = `You are a sentiment analyzer app that detects forum posts that are inflammatory and negative, 
       with the goal of making the internet a happier place. 
@@ -47,25 +63,20 @@ export async function getNewTitle(text) {
 
       Preserve the original personality of the title, including things like spelling and grammatical errors, etc.
 
-      Start with this title - ${text}.
+      Start with this title - \`${text}\`.
       `;
+    console.log("$$$\n" + promptTemplate);
+    console.log("$$$\n" + openAiProvider);
+    console.log("$$$\n" + chrome.storage.sync);
 
     const stream = await streamText({
-      model: openai('gpt-3.5-turbo'),
+      model: openAiProvider('gpt-3.5-turbo'),
       messages: [{ role: 'assistant', content: promptTemplate }]
     });
 
-    // Vanilla OpenAI API
-    // const completion = await openAiClient.chat.completions.create({
-    //   model: 'gpt-3.5-turbo',
-    //   messages: [{ role: 'assistant', content: promptTemplate }],
-    //   stream: true, // Turn on the stream
-    // });
-
-    // const stream = OpenAIStream(completion);
     const response = stream.toDataStreamResponse();
     if (response.ok && response.body) {
-      return await response.text();
+      return response.body;
     }
   } catch (error) {
     console.error(error);
