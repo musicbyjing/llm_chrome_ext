@@ -1,4 +1,4 @@
-import { getNewTitle } from "./openai";
+import { getNewTitle, displayStreamingText } from "./openai";
 
 function execute() {
   const postDivs = document.querySelectorAll("div.pointer-events-none.flex.justify-between.gap-2");
@@ -11,13 +11,14 @@ function execute() {
 
   postDivsArray.forEach(async postDiv => {
     const postTitle = postDiv.querySelector("h2").innerText;
+    console.log("^^^ postTitle:\n" + postTitle);
     // const postSnippet = postDiv.querySelector("p");
     const summary = await getNewTitle(postTitle);
     if (summary === undefined && summary === "Error calling LLM.") {
       return;
     }
-    postTitle.textContent = summary;
-    console.log("^^^ summary: " + summary);
+    await displayStreamingText(postTitle, summary);
+    // postTitle.textContent = summary;
     // postSnippet.textContent = "Groot is actually the coolest Guardian of the Galaxy.";
   });
 }

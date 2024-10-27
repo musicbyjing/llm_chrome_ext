@@ -59,27 +59,55 @@ export async function getNewTitle(text) {
       with the goal of making the internet a happier place. 
 
       You are given a title from the post. Decide whether the title is negative or not. If it is negative, rewrite the 
-      title and content so that it's more positive. If it's not negative, return the original title.
+      title so that it's more positive. If it's not negative, return the original title.
 
       Preserve the original personality of the title, including things like spelling and grammatical errors, etc.
 
-      Start with this title - \`${text}\`.
+      **Your response must only contain a title**. Start with this - \`${text}\`.
       `;
-    console.log("$$$\n" + promptTemplate);
-    console.log("$$$\n" + openAiProvider);
-    console.log("$$$\n" + chrome.storage.sync);
+    // console.log("$$$\n" + promptTemplate);
+    // console.log("$$$\n" + openAiProvider);
+    // console.log("$$$\n" + chrome.storage.sync);
 
     const stream = await streamText({
       model: openAiProvider('gpt-3.5-turbo'),
       messages: [{ role: 'assistant', content: promptTemplate }]
     });
-
-    const response = stream.toDataStreamResponse();
-    if (response.ok && response.body) {
-      return response.body;
-    }
+    return stream;
   } catch (error) {
     console.error(error);
     return "Error calling LLM.";
   }
+}
+
+/**
+ * Parses the stream and displays the text as it arrives.
+ * 
+ * @param {Element} element - The element to update.
+ * @param {StreamTextResult} response - The stream from OpenAI.
+ * @returns {void}.
+ */
+export async function displayStreamingText(element, response) {
+  let accumulatedText = '';
+  const reader = response.textStream.getReader();
+
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) {
+        break;
+      }
+      if (value) {
+        element.textcontent = "I AM GROOT.";
+        const chunk = value;
+        accumulatedText += chunk;
+        console.log("%%% accumulatedText:\n" + accumulatedText);
+        // element.textContent = accumulatedText;
+      }
+    }
+  } catch (error) {
+    console.error(error);
+    return 'Error in displayStreamingText().';
+  }
+
 }
