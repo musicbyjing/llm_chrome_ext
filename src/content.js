@@ -10,27 +10,40 @@ function execute() {
   console.log("### postDivsArray.length\n" + postDivsArray.length);
 
   postDivsArray.forEach(async postDiv => {
-    const postTitle = postDiv.querySelector("h2").innerText;
+    const postElement = postDiv.querySelector("h2");
+    const postTitle = postElement.innerText;
     console.log("^^^ postTitle:\n" + postTitle);
     // const postSnippet = postDiv.querySelector("p");
-    const summary = await getNewTitle(postTitle);
-    if (summary === undefined && summary === "Error calling LLM.") {
+    const summaryStream = await getNewTitle(postTitle);
+    if (summaryStream === undefined && summaryStream === "Error calling LLM.") {
       return;
     }
-    await displayStreamingText(postTitle, summary);
+    await displayStreamingText(postElement, summaryStream);
     // postTitle.textContent = summary;
     // postSnippet.textContent = "Groot is actually the coolest Guardian of the Galaxy.";
   });
 }
 
-// /** Execute once */
-// execute();
+/**
+ * Wait for an event to fire. Once fired, resolve the Promise, and only do so once.
+ * 
+ * @param {String} eventName - The name of the event to wait on.
+ * @returns {Promise<void>}.
+ */
+function waitForEvent(eventName) {
+  return new Promise(resolve => document.addEventListener(eventName, resolve, { once: true }));
+}
 
-/** Function to trigger useOpenAiProvider only when the provider is ready */
-document.addEventListener('openAiProviderReady', () => {
-  // Once the provider is initialized, use it
+/** Main function. */
+async function initialize() {
+  await Promise.all([
+    // waitForEvent('DOMContentLoaded'),
+    waitForEvent('openAiProviderReady')
+  ]);
   execute();
-});
+}
+
+initialize();
 
 /** Workaround to bypass the initial React issue, but it now executes in a continuous loop. */
 // // Options for the observer (which mutations to observe)

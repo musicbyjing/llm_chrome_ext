@@ -47,7 +47,7 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
  * Calls an LLM to rewrite the passed-in text.
  * 
  * @param {string} text - The post title.
- * @returns {ReadableStream}.
+ * @returns {Promise<ReadableStream>}.
  */
 export async function getNewTitle(text) {
   if (!openAiProvider) {
@@ -69,11 +69,11 @@ export async function getNewTitle(text) {
     // console.log("$$$\n" + openAiProvider);
     // console.log("$$$\n" + chrome.storage.sync);
 
-    const stream = await streamText({
+    const { textStream } = await streamText({
       model: openAiProvider('gpt-3.5-turbo'),
       messages: [{ role: 'assistant', content: promptTemplate }]
     });
-    return stream;
+    return textStream;
   } catch (error) {
     console.error(error);
     return "Error calling LLM.";
@@ -84,12 +84,14 @@ export async function getNewTitle(text) {
  * Parses the stream and displays the text as it arrives.
  * 
  * @param {Element} element - The element to update.
- * @param {StreamTextResult} response - The stream from OpenAI.
+ * @param {ReadableStream} stream - The stream from OpenAI.
  * @returns {void}.
  */
-export async function displayStreamingText(element, response) {
+export async function displayStreamingText(element, stream) {
   let accumulatedText = '';
-  const reader = response.textStream.getReader();
+  const reader = stream.getReader();
+  console.log("$$$ element:\n" + element);
+  console.log("$$$ typeof element:\n" + typeof element);
 
   try {
     while (true) {
@@ -98,11 +100,11 @@ export async function displayStreamingText(element, response) {
         break;
       }
       if (value) {
-        element.textcontent = "I AM GROOT.";
+        // console.log("%%% element.textContent:\n" + element.textContent);
         const chunk = value;
         accumulatedText += chunk;
-        console.log("%%% accumulatedText:\n" + accumulatedText);
-        // element.textContent = accumulatedText;
+        // console.log("%%% accumulatedText:\n" + accumulatedText);
+        element.textContent = accumulatedText;
       }
     }
   } catch (error) {
