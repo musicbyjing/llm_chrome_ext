@@ -5,25 +5,19 @@ import { OpenAI } from "openai";
 let openAiProvider;
 
 function initializeOpenAI(openAIApiKey) {
-  // Vercel.
+  // Vercel API.
   openAiProvider = createOpenAI({
     apiKey: openAIApiKey,
     dangerouslyAllowBrowser: true // Needed for the Chrome extension to work.
   });
   // Signal that the provider is ready.
   document.dispatchEvent(new CustomEvent('openAiProviderReady'));
-  // Vanilla OpenAI API.
-  // openAiProvider = new OpenAI({
-  //   apiKey: openAIApiKey,
-  //   dangerouslyAllowBrowser: true // Needed for the Chrome extension to work.
-  // });
 }
 
 // Retrieve the OpenAI API key, if available.
 chrome.storage.sync.get(['openai'], (result) => {
   const openAIApiKey = result.openai;
   if (openAIApiKey) {
-    // console.log("%%% get openAIApiKey: " + openAIApiKey);
     initializeOpenAI(openAIApiKey);
   } else {
     console.log('API key not found, waiting for storage update...');
@@ -34,14 +28,9 @@ chrome.storage.sync.get(['openai'], (result) => {
 chrome.storage.onChanged.addListener((changes, namespace) => {
   if (namespace === "sync" && changes.openai) {
     const openAIApiKey = changes.openai.newValue;
-    // console.log("%%% onChanged openAIApiKey: " + openAIApiKey);
     initializeOpenAI(openAIApiKey);
   }
 });
-
-///////////////////
-// - MAY HAVE SOME ISSUES WITH DANGEROUSLYALLOWBROWSER OPTION
-///////////////////
 
 /**
  * Calls an LLM to rewrite the passed-in text.
@@ -90,20 +79,17 @@ export async function getNewTitle(text) {
 export async function displayStreamingText(element, stream) {
   let accumulatedText = '';
   const reader = stream.getReader();
-  console.log("$$$ element:\n" + element);
-  console.log("$$$ typeof element:\n" + typeof element);
 
   try {
     while (true) {
       const { value, done } = await reader.read();
       if (done) {
+        console.log("%%% LLM response accumulatedText:\n" + accumulatedText);
         break;
       }
       if (value) {
-        // console.log("%%% element.textContent:\n" + element.textContent);
         const chunk = value;
         accumulatedText += chunk;
-        // console.log("%%% accumulatedText:\n" + accumulatedText);
         element.textContent = accumulatedText;
       }
     }
