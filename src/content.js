@@ -1,7 +1,7 @@
 import { getNewTitle, displayStreamingText } from "./openai";
 
 /**
- * Call OpenAI to update a postDiv's title in a streaming fashion.
+ * Calls OpenAI to update a postDiv's title in a streaming fashion.
  * 
  * @param {Element} postDiv 
  * @returns {Promise<void>}.
@@ -19,11 +19,11 @@ async function processTitle(postDiv) {
 }
 
 /**
- * MutationObserver catches dynamically loading content. Only once the post titles are loaded should we call OpenAI to rewrite them.
+ * MutationObserver catches dynamically loading content. Only once a post title is loaded should we call OpenAI to rewrite it.
  */
 const targetSelector = "div.pointer-events-none.flex.justify-between.gap-2";
 
-// Callback function to execute when mutations are observed.
+// Callback executes when mutations are observed.
 const callback = async function (mutationsList, observer) {
   mutationsList.forEach(mutation => {
     const postDivs = mutation.target.querySelectorAll(targetSelector);
@@ -41,10 +41,10 @@ const callback = async function (mutationsList, observer) {
   });
 };
 
-// Create an observer instance linked to the callback function.
+// Creates an observer instance linked to the callback function.
 const observer = new MutationObserver(callback);
 
-// Start observing the target node for configured mutations.
+// Starts observing the target node for configured mutations.
 document.addEventListener('openAiProviderReady', () => {
   observer.observe(document.body, { childList: true });
 });

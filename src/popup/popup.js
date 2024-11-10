@@ -18,7 +18,7 @@ const Form = () => {
     button(
       {
         onclick: () => {
-          // Get the count value from Chrome storage
+          // Gets the count value from Chrome storage
           chrome.storage.sync.set({
             openai: inputDom.value,
           });
